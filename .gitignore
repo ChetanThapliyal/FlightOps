@@ -1,0 +1,135 @@
+# ============================================================
+# FlightOps .gitignore
+# Stack: Python/Flask · Terraform · Kubernetes · Helm · Docker
+# ============================================================
+
+# --------------------------
+# Python
+# --------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# pytest / coverage
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.tox/
+.nox/
+
+# mypy / type checkers
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pytype/
+
+# Flask instance folder
+instance/
+
+# --------------------------
+# Terraform
+# --------------------------
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+!*.tfvars.example
+*.tfplan
+
+# --------------------------
+# Kubernetes
+# --------------------------
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+**/secrets/*.yaml
+!**/secrets/*.example.yaml
+
+# --------------------------
+# Helm
+# --------------------------
+charts/*/charts/
+*.tgz
+
+# --------------------------
+# Docker
+# --------------------------
+docker-compose.override.yml
+
+# --------------------------
+# Secrets & Credentials
+# --------------------------
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.env
+!*.env.example
+.env.local
+.env.*.local
+*-sa-key.json
+*-credentials.json
+service-account*.json
+
+# --------------------------
+# IDE & Editors
+# --------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# --------------------------
+# OS
+# --------------------------
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# --------------------------
+# Misc
+# --------------------------
+*.log
+*.bak
+*.tmp
+*.temp
+node_modules/
+documentation.md
+implementation_plan.md
+uv.lock

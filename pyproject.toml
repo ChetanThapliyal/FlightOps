@@ -1,0 +1,17 @@
+[project]
+name = "flightops"
+version = "0.1.0"
+description = "Flight Booking"
+readme = "README.md"
+authors = [
+    { name = "Chetan Thapliyal", email = "chetan.thapliyal@protonmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+flightops = "flightops:main"
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
