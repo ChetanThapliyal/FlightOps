@@ -133,3 +133,4 @@ node_modules/
 documentation.md
 implementation_plan.md
 uv.lock
+.agents/
