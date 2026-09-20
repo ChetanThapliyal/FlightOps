@@ -7,10 +7,16 @@ authors = [
     { name = "Chetan Thapliyal", email = "chetan.thapliyal@protonmail.com" }
 ]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "flask>=3.0.0",
+]
 
 [project.scripts]
 flightops = "flightops:main"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
 
 [build-system]
 requires = ["uv_build>=0.12.5,<0.13.0"]
