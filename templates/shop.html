@@ -8,61 +8,77 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1 class="page-title">Welcome, {{ name }}</h1>
+    <div class="dashboard-header">
+        <div class="header-spacer"></div>
+        <h1 class="page-title">Welcome, {{ name }}</h1>
+        <a href="/logout" class="btn-logout">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Logout
+        </a>
+    </div>
     
-    <div class="grid-layout">
-        <!-- Buy Ticket Panel -->
-        <div class="glass-panel">
-            <h3>Book a Flight</h3>
-            <form action="/ticket" method="post">
-                <label for="buy-departure">Departure</label>
-                <input type="text" id="buy-departure" name="buy-departure" placeholder="Where from?">
-                
-                <label for="buy-destination">Arrival</label>
-                <input type="text" id="buy-destination" name="buy-destination" placeholder="Where to?">
-                
-                <button type="submit">Search Tickets</button>
-            </form>
-        </div>
-
-        <!-- Delete Ticket Panel -->
-        <div class="glass-panel">
-            <h3>Cancel a Flight</h3>
-            <form action="/ticket" method="post">
-                <label for="delete-departure">Departure</label>
-                <input type="text" id="delete-departure" name="delete-departure" placeholder="Where from?">
-                
-                <label for="delete-destination">Arrival</label>
-                <input type="text" id="delete-destination" name="delete-destination" placeholder="Where to?">
-                
-                <button type="submit" class="danger">Find Ticket to Cancel</button>
-            </form>
-        </div>
+    <!-- Book Flight Panel -->
+    <div class="glass-panel wide" style="max-width: 680px;">
+        <h3>Book a Flight</h3>
+        <form action="/ticket" method="post">
+            <div class="route-select-grid">
+                <div>
+                    <label for="buy-departure">Departure State</label>
+                    <select id="buy-departure" name="buy-departure" required>
+                        <option value="" disabled selected>Select departure state...</option>
+                        {% for code, state in states %}
+                        <option value="{{ state }}">{{ state }} ({{ code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="buy-destination">Arrival State</label>
+                    <select id="buy-destination" name="buy-destination" required>
+                        <option value="" disabled selected>Select destination state...</option>
+                        {% for code, state in states %}
+                        <option value="{{ state }}">{{ state }} ({{ code }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <button type="submit">Search Tickets</button>
+        </form>
     </div>
 
     {% if flights and flights|length > 0 %}
     <div class="glass-panel wide" style="margin-top: 2rem;">
         <h2>Your Itinerary</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Departure</th>
-                    <th>Destination</th>
-                    <th>Departure Time</th>
-                    <th>Arrival Time</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for flight in flights %}
-                <tr>
-                    <td>{{ flight[0] }}</td>
-                    <td>{{ flight[1] }}</td>
-                    <td>{{ flight[2] }}</td>
-                    <td>{{ flight[3] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ticket ID</th>
+                        <th>Departure</th>
+                        <th>Destination</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Time</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for flight in flights %}
+                    <tr>
+                        <td><span class="ticket-badge">{{ flight[4] }}</span></td>
+                        <td>{{ flight[0] }}</td>
+                        <td>{{ flight[1] }}</td>
+                        <td>{{ flight[2] }}</td>
+                        <td>{{ flight[3] }}</td>
+                        <td style="text-align: center;">
+                            <form action="/delete" method="post" style="display: inline-block; margin: 0;" onsubmit="return confirm('Are you sure you want to cancel ticket {{ flight[4] }} ({{ flight[0] }} to {{ flight[1] }})?');">
+                                <input type="hidden" name="delete-ticket-id" value="{{ flight[4] }}">
+                                <button type="submit" class="danger btn-sm">Cancel</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% endif %}
 </body>
