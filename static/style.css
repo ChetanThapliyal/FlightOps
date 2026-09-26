@@ -47,8 +47,10 @@ body {
 }
 
 /* For pages needing a wider layout like the shop or tickets */
-.container.wide {
-    max-width: 900px;
+.container.wide,
+.glass-panel.wide {
+    max-width: 950px;
+    width: 100%;
 }
 
 .page-title {
@@ -59,6 +61,59 @@ body {
     background: linear-gradient(to right, #60a5fa, #a78bfa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+/* Dashboard Header & Logout */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 950px;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.dashboard-header .header-spacer {
+    width: 100px;
+}
+
+.dashboard-header .page-title {
+    margin-bottom: 0;
+}
+
+.btn-logout {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-logout:hover {
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
+    border-color: rgba(239, 68, 68, 0.6);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+
+@media (max-width: 640px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .dashboard-header .header-spacer {
+        display: none;
+    }
 }
 
 h1, h2, h3 {
@@ -102,7 +157,8 @@ label {
 
 input[type="text"],
 input[type="password"],
-input[type="email"] {
+input[type="email"],
+select {
     width: 100%;
     padding: 0.875rem 1rem;
     background: var(--input-bg);
@@ -112,9 +168,16 @@ input[type="email"] {
     font-size: 1rem;
     transition: all 0.2s ease;
     outline: none;
+    cursor: pointer;
 }
 
-input:focus {
+select option {
+    background-color: #1e1b4b;
+    color: var(--text-primary);
+}
+
+input:focus,
+select:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
@@ -152,14 +215,22 @@ button.danger:hover {
 }
 
 /* Tables for Flights */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
-    margin: 1.5rem 0;
     text-align: left;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
     overflow: hidden;
+    min-width: 600px;
 }
 
 th, td {
@@ -203,6 +274,41 @@ tr:hover td {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1rem;
+}
+
+/* Route selection grid for booking */
+.route-select-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+@media (min-width: 600px) {
+    .route-select-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Ticket Badge */
+.ticket-badge {
+    background: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+/* Compact button for table actions */
+button.btn-sm {
+    padding: 0.45rem 1rem;
+    font-size: 0.85rem;
+    margin: 0;
+    width: auto;
+    display: inline-block;
 }
 
 /* Animations */
