@@ -13,31 +13,33 @@
 <h1 class="page-title">Available Flights</h1>
 <div class="glass-panel wide">
     <form action="/payment" method="post">
-        <table>
-            <thead>
-                <tr>
-                    <th>Departure</th>
-                    <th>Destination</th>
-                    <th>Departure Time</th>
-                    <th>Arrival Time</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ available_flights["departure"] }}</td>
-                    <input type="hidden" name="departure" value="{{ available_flights["departure"] }}">
-                    <td>{{ available_flights["destination"] }}</td>
-                    <input type="hidden" name="destination" value="{{ available_flights["destination"] }}">
-                    <td>{{ available_flights["departure_time"] }}</td>
-                    <input type="hidden" name="departure_time" value="{{ available_flights["departure_time"] }}">
-                    <td>{{ available_flights["arrival_time"] }}</td>
-                    <input type="hidden" name="arrival_time" value="{{ available_flights["arrival_time"] }}">
-                    <td>${{ available_flights["price"] }}</td>
-                    <input type="hidden" name="price" value="{{ available_flights["price"] }}">
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Departure</th>
+                        <th>Destination</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Time</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ available_flights["departure"] }}</td>
+                        <input type="hidden" name="departure" value="{{ available_flights["departure"] }}">
+                        <td>{{ available_flights["destination"] }}</td>
+                        <input type="hidden" name="destination" value="{{ available_flights["destination"] }}">
+                        <td>{{ available_flights["departure_time"] }}</td>
+                        <input type="hidden" name="departure_time" value="{{ available_flights["departure_time"] }}">
+                        <td>{{ available_flights["arrival_time"] }}</td>
+                        <input type="hidden" name="arrival_time" value="{{ available_flights["arrival_time"] }}">
+                        <td>${{ available_flights["price"] }}</td>
+                        <input type="hidden" name="price" value="{{ available_flights["price"] }}">
+                    </tr>
+                </tbody>
+            </table>
+        </div>
         <button type="submit" style="width: 100%;">Proceed to Payment</button>
     </form>
 </div>
@@ -47,24 +49,26 @@
 <h1 class="page-title">Flight Cancellation</h1>
 <div class="glass-panel wide">
     <h2>Ticket Details</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Departure</th>
-                <th>Destination</th>
-                <th>Departure Time</th>
-                <th>Arrival Time</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>{{ flight[0][2] }}</td>
-                <td>{{ flight[0][3] }}</td>
-                <td>{{ flight[0][4] }}</td>
-                <td>{{ flight[0][5] }}</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Departure</th>
+                    <th>Destination</th>
+                    <th>Departure Time</th>
+                    <th>Arrival Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ flight[0][2] }}</td>
+                    <td>{{ flight[0][3] }}</td>
+                    <td>{{ flight[0][4] }}</td>
+                    <td>{{ flight[0][5] }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
     <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
 
