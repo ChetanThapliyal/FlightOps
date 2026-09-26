@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Ticket Options - FlightOps</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+{% if action == 'buy' %}
+<h1 class="page-title">Available Flights</h1>
+<div class="glass-panel wide">
+    <form action="/payment" method="post">
+        <table>
+            <thead>
+                <tr>
+                    <th>Departure</th>
+                    <th>Destination</th>
+                    <th>Departure Time</th>
+                    <th>Arrival Time</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ available_flights["departure"] }}</td>
+                    <input type="hidden" name="departure" value="{{ available_flights["departure"] }}">
+                    <td>{{ available_flights["destination"] }}</td>
+                    <input type="hidden" name="destination" value="{{ available_flights["destination"] }}">
+                    <td>{{ available_flights["departure_time"] }}</td>
+                    <input type="hidden" name="departure_time" value="{{ available_flights["departure_time"] }}">
+                    <td>{{ available_flights["arrival_time"] }}</td>
+                    <input type="hidden" name="arrival_time" value="{{ available_flights["arrival_time"] }}">
+                    <td>${{ available_flights["price"] }}</td>
+                    <input type="hidden" name="price" value="{{ available_flights["price"] }}">
+                </tr>
+            </tbody>
+        </table>
+        <button type="submit" style="width: 100%;">Proceed to Payment</button>
+    </form>
+</div>
+{% endif %}
+
+{% if action == 'delete' %}
+<h1 class="page-title">Flight Cancellation</h1>
+<div class="glass-panel wide">
+    <h2>Ticket Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Departure</th>
+                <th>Destination</th>
+                <th>Departure Time</th>
+                <th>Arrival Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ flight[0][2] }}</td>
+                <td>{{ flight[0][3] }}</td>
+                <td>{{ flight[0][4] }}</td>
+                <td>{{ flight[0][5] }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
+
+    <form action="/delete" method="post">
+        <label for="delete-ticket-id">Confirm Ticket ID</label>
+        <input type="text" id="delete-ticket-id" name="delete-ticket-id" placeholder="Enter ticket ID to confirm cancellation">
+        <button type="submit" class="danger">Confirm Cancellation</button>
+    </form>
+</div>
+{% endif %}
+
+</body>
+</html>
