@@ -1,0 +1,68 @@
+# ==============================================================================
+# .dockerignore — keep the build context lean and secret-free
+# ==============================================================================
+
+# Version control
+.git/
+.gitignore
+
+# Python dev artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+dist/
+build/
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Terraform / IaC
+.terraform/
+*.tfstate*
+*.tfvars
+*.tfplan
+
+# Kubernetes / Helm
+kubeconfig*
+charts/*/charts/
+*.tgz
+
+# Docker
+Dockerfile
+docker-compose*.yml
+compose*.yml
+.dockerignore
+
+# Documentation / planning
+*.md
+docs/
+documentation.md
+implementation_plan.md
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Agent / tooling
+.agents/
+uv.lock
+.python-version
+pyproject.toml
