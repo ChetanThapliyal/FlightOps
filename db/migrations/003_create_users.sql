@@ -7,9 +7,9 @@
 --            Must run BEFORE 003_create_tickets.sql (tickets.user_id FK).
 -- =============================================================================
 
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
     id       SERIAL       PRIMARY KEY,
     name     VARCHAR(50)  NOT NULL,
-    password VARCHAR(50)  NOT NULL,  -- NOTE: store hashed passwords in production (e.g. bcrypt)
+    password VARCHAR(255) NOT NULL,  -- NOTE: store hashed passwords in production (e.g. bcrypt hash is 60 characters)
     email    VARCHAR(50)  NOT NULL UNIQUE
 );
