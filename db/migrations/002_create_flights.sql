@@ -8,7 +8,7 @@
 -- Run order: 2nd — depends on: 001_create_states.sql
 -- =============================================================================
 
-CREATE TABLE flights (
+CREATE TABLE IF NOT EXISTS flights (
     id                 SERIAL         PRIMARY KEY,
     departure_state_id INT            NOT NULL REFERENCES states(id),  -- FK → states
     arrival_state_id   INT            NOT NULL REFERENCES states(id),  -- FK → states
@@ -20,9 +20,9 @@ CREATE TABLE flights (
 );
 
 -- Indexes for common query patterns (search by route or date)
-CREATE INDEX idx_flights_departure_state ON flights(departure_state_id);
-CREATE INDEX idx_flights_arrival_state   ON flights(arrival_state_id);
-CREATE INDEX idx_flights_departure_time  ON flights(departure_time);
+CREATE INDEX IF NOT EXISTS idx_flights_departure_state ON flights(departure_state_id);
+CREATE INDEX IF NOT EXISTS idx_flights_arrival_state   ON flights(arrival_state_id);
+CREATE INDEX IF NOT EXISTS idx_flights_departure_time  ON flights(departure_time);
 
 -- =============================================================================
 -- Seed Data
@@ -109,4 +109,5 @@ priced_data AS (
 )
 INSERT INTO flights (departure_state_id, arrival_state_id, departure_time, arrival_time, price)
 SELECT departure_state_id, arrival_state_id, departure_time, arrival_time, price
-FROM priced_data;
+FROM priced_data
+WHERE NOT EXISTS (SELECT 1 FROM flights LIMIT 1);
