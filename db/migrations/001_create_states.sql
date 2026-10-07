@@ -7,7 +7,7 @@
 -- Run order: 1st — no dependencies.
 -- =============================================================================
 
-CREATE TABLE states (
+CREATE TABLE IF NOT EXISTS states (
     id         SERIAL       PRIMARY KEY,
     state_code VARCHAR(2)   NOT NULL UNIQUE,  -- 2-char USPS abbreviation (e.g. 'CA')
     state_name VARCHAR(50)  NOT NULL          -- Full state name (e.g. 'California')
@@ -64,4 +64,5 @@ INSERT INTO states (state_code, state_name) VALUES
     ('WA', 'Washington'),
     ('WV', 'West Virginia'),
     ('WI', 'Wisconsin'),
-    ('WY', 'Wyoming');
+    ('WY', 'Wyoming')
+ON CONFLICT (state_code) DO NOTHING;
