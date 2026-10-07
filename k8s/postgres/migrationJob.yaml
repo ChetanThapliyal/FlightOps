@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: run-init-sql
+  namespace: flightops
+  labels:
+    app.kubernetes.io/name: postgres-migration
+    app.kubernetes.io/part-of: flightops
+    app.kubernetes.io/component: database-migration
+spec:
+  completions: 1
+  parallelism: 1
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres-migration
+        app.kubernetes.io/part-of: flightops
+        app.kubernetes.io/component: database-migration
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: psql
+          image: postgres:16.4-alpine
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: creds
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: creds
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: creds
+                  key: dbname
+            - name: POSTGRES_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: creds
+                  key: host
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -euo pipefail
+              echo "Waiting for PostgreSQL at ${POSTGRES_HOST}:5432 to be ready..."
+              until pg_isready -h "$POSTGRES_HOST" -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+                echo "PostgreSQL is not ready yet, retrying in 2s..."
+                sleep 2
+              done
+              echo "PostgreSQL is ready! Executing migration scripts in order..."
+              for file in $(find /scripts -maxdepth 1 -name "*.sql" | sort); do
+                if [ -f "$file" ]; then
+                  echo "=========================================="
+                  echo "Executing: $(basename "$file")"
+                  echo "=========================================="
+                  PGPASSWORD="$POSTGRES_PASSWORD" psql \
+                    -h "$POSTGRES_HOST" \
+                    -p 5432 \
+                    -U "$POSTGRES_USER" \
+                    -d "$POSTGRES_DB" \
+                    -v ON_ERROR_STOP=1 \
+                    -f "$file"
+                fi
+              done
+              echo "=========================================="
+              echo "Database migrations executed successfully!"
+              echo "=========================================="
+          volumeMounts:
+            - name: flightops-scripts
+              mountPath: /scripts
+              readOnly: true
+      volumes:
+        - name: flightops-scripts
+          configMap:
+            name: flightops-init-sql
+            defaultMode: 0755
