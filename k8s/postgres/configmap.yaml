@@ -1,0 +1,221 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flightops-init-sql
+  namespace: flightops
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: flightops
+    app.kubernetes.io/component: database-migration
+data:
+  001_create_states.sql: |
+    -- =============================================================================
+    -- Migration: 001_create_states.sql
+    -- Table:     states
+    -- Purpose:   Lookup table for all 50 US states.
+    --            Referenced as a FK by flights and tickets tables.
+    -- Seed:      All 50 US states (state_code + state_name).
+    -- Run order: 1st — no dependencies.
+    -- =============================================================================
+
+    CREATE TABLE IF NOT EXISTS states (
+        id         SERIAL       PRIMARY KEY,
+        state_code VARCHAR(2)   NOT NULL UNIQUE,  -- 2-char USPS abbreviation (e.g. 'CA')
+        state_name VARCHAR(50)  NOT NULL          -- Full state name (e.g. 'California')
+    );
+
+    -- Seed: all 50 US states
+    INSERT INTO states (state_code, state_name) VALUES
+        ('AL', 'Alabama'),
+        ('AK', 'Alaska'),
+        ('AZ', 'Arizona'),
+        ('AR', 'Arkansas'),
+        ('CA', 'California'),
+        ('CO', 'Colorado'),
+        ('CT', 'Connecticut'),
+        ('DE', 'Delaware'),
+        ('FL', 'Florida'),
+        ('GA', 'Georgia'),
+        ('HI', 'Hawaii'),
+        ('ID', 'Idaho'),
+        ('IL', 'Illinois'),
+        ('IN', 'Indiana'),
+        ('IA', 'Iowa'),
+        ('KS', 'Kansas'),
+        ('KY', 'Kentucky'),
+        ('LA', 'Louisiana'),
+        ('ME', 'Maine'),
+        ('MD', 'Maryland'),
+        ('MA', 'Massachusetts'),
+        ('MI', 'Michigan'),
+        ('MN', 'Minnesota'),
+        ('MS', 'Mississippi'),
+        ('MO', 'Missouri'),
+        ('MT', 'Montana'),
+        ('NE', 'Nebraska'),
+        ('NV', 'Nevada'),
+        ('NH', 'New Hampshire'),
+        ('NJ', 'New Jersey'),
+        ('NM', 'New Mexico'),
+        ('NY', 'New York'),
+        ('NC', 'North Carolina'),
+        ('ND', 'North Dakota'),
+        ('OH', 'Ohio'),
+        ('OK', 'Oklahoma'),
+        ('OR', 'Oregon'),
+        ('PA', 'Pennsylvania'),
+        ('RI', 'Rhode Island'),
+        ('SC', 'South Carolina'),
+        ('SD', 'South Dakota'),
+        ('TN', 'Tennessee'),
+        ('TX', 'Texas'),
+        ('UT', 'Utah'),
+        ('VT', 'Vermont'),
+        ('VA', 'Virginia'),
+        ('WA', 'Washington'),
+        ('WV', 'West Virginia'),
+        ('WI', 'Wisconsin'),
+        ('WY', 'Wyoming')
+    ON CONFLICT (state_code) DO NOTHING;
+
+  002_create_flights.sql: |
+    -- =============================================================================
+    -- Migration: 002_create_flights.sql
+    -- Table:     flights
+    -- Purpose:   Available flights between US states.
+    --            departure_state_id and arrival_state_id are FKs into the states
+    --            table — ensures referential integrity and enables efficient JOINs.
+    -- Seed:      ~7,350 rows (3 flights × 50×49 unique state pairs).
+    -- Run order: 2nd — depends on: 001_create_states.sql
+    -- =============================================================================
+
+    CREATE TABLE IF NOT EXISTS flights (
+        id                 SERIAL         PRIMARY KEY,
+        departure_state_id INT            NOT NULL REFERENCES states(id),  -- FK → states
+        arrival_state_id   INT            NOT NULL REFERENCES states(id),  -- FK → states
+        departure_time     TIMESTAMPTZ    NOT NULL,                        -- timezone-aware
+        arrival_time       TIMESTAMPTZ    NOT NULL,                        -- timezone-aware
+        price              DECIMAL(10, 2) NOT NULL,
+        CHECK (arrival_time > departure_time),                             -- arrival must be after departure
+        CHECK (price > 0)
+    );
+
+    -- Indexes for common query patterns (search by route or date)
+    CREATE INDEX IF NOT EXISTS idx_flights_departure_state ON flights(departure_state_id);
+    CREATE INDEX IF NOT EXISTS idx_flights_arrival_state   ON flights(arrival_state_id);
+    CREATE INDEX IF NOT EXISTS idx_flights_departure_time  ON flights(departure_time);
+
+    -- =============================================================================
+    -- Seed Data
+    -- =============================================================================
+    -- Strategy: 3 flights per unique state pair (50 × 49 routes × 3 = 7,350 rows)
+    -- =============================================================================
+
+    WITH
+    state_regions AS (
+        SELECT
+            id,
+            state_code,
+            CASE
+                WHEN state_code IN ('ME','NH','VT','MA','RI','CT','NY','NJ','PA') THEN 'northeast'
+                WHEN state_code IN ('MD','DE','VA','WV','NC','SC','GA','FL')      THEN 'southeast'
+                WHEN state_code IN ('OH','MI','IN','IL','WI','MN','IA','MO',
+                                    'ND','SD','NE','KS')                          THEN 'midwest'
+                WHEN state_code IN ('KY','TN','AL','MS','AR','LA','OK','TX')      THEN 'south'
+                WHEN state_code IN ('MT','ID','WY','CO','NM','AZ','UT','NV')      THEN 'mountain'
+                WHEN state_code IN ('WA','OR','CA','AK','HI')                     THEN 'pacific'
+            END AS region
+        FROM states
+    ),
+    route_data AS (
+        -- 3 flights per route, staggered across 3 x 10-day departure windows
+        SELECT
+            s1.id     AS departure_state_id,
+            s2.id     AS arrival_state_id,
+            s1.region AS dep_region,
+            s2.region AS arr_region,
+            (NOW() + INTERVAL '1 day' * ((g.n - 1) * 10 + FLOOR(RANDOM() * 10)))::DATE
+                + TIME '00:00:00'
+                + INTERVAL '1 hour' * FLOOR(RANDOM() * 23) AS departure_time
+        FROM       state_regions s1
+        CROSS JOIN state_regions s2
+        CROSS JOIN generate_series(1, 3) AS g(n)
+        WHERE s1.state_code <> s2.state_code  -- exclude same-state routes
+    ),
+    priced_data AS (
+        SELECT
+            departure_state_id,
+            arrival_state_id,
+            departure_time,
+            -- arrival_time: 1–5 hours after departure (always > departure_time)
+            departure_time + INTERVAL '1 hour' * (1 + FLOOR(RANDOM() * 5)) AS arrival_time,
+            CASE
+                -- Same region → short haul: $50–$200
+                WHEN dep_region = arr_region
+                    THEN CAST((50 + RANDOM() * 150) AS NUMERIC(10, 2))
+
+                -- Adjacent regions → mid haul: $150–$350
+                WHEN (dep_region = 'northeast' AND arr_region IN ('southeast', 'midwest'))
+                  OR (dep_region = 'southeast' AND arr_region IN ('northeast', 'midwest', 'south'))
+                  OR (dep_region = 'midwest'   AND arr_region IN ('northeast', 'southeast', 'south', 'mountain'))
+                  OR (dep_region = 'south'     AND arr_region IN ('southeast', 'midwest', 'mountain'))
+                  OR (dep_region = 'mountain'  AND arr_region IN ('midwest', 'south', 'pacific'))
+                  OR (dep_region = 'pacific'   AND arr_region = 'mountain')
+                    THEN CAST((150 + RANDOM() * 200) AS NUMERIC(10, 2))
+
+                -- Distant / cross-country → long haul: $250–$550
+                ELSE CAST((250 + RANDOM() * 300) AS NUMERIC(10, 2))
+            END AS price
+        FROM route_data
+    )
+    INSERT INTO flights (departure_state_id, arrival_state_id, departure_time, arrival_time, price)
+    SELECT departure_state_id, arrival_state_id, departure_time, arrival_time, price
+    FROM priced_data
+    WHERE NOT EXISTS (SELECT 1 FROM flights LIMIT 1);
+
+  003_create_users.sql: |
+    -- =============================================================================
+    -- Migration: 003_create_users.sql
+    -- Table:     users
+    -- Purpose:   Application user accounts. Referenced as FK by the tickets table.
+    -- Seed:      None — populated at runtime via user registration flow.
+    -- Run order: 3rd — no dependencies on other tables.
+    --            Must run BEFORE 004_create_tickets.sql (tickets.user_id FK).
+    -- =============================================================================
+
+    CREATE TABLE IF NOT EXISTS users (
+        id       SERIAL       PRIMARY KEY,
+        name     VARCHAR(50)  NOT NULL,
+        password VARCHAR(255) NOT NULL,  -- NOTE: store hashed passwords in production (e.g. bcrypt hash is 60 chars)
+        email    VARCHAR(50)  NOT NULL UNIQUE
+    );
+
+  004_create_tickets.sql: |
+    -- =============================================================================
+    -- Migration: 004_create_tickets.sql
+    -- Table:     tickets
+    -- Purpose:   Booked tickets linking a user to a specific flight route.
+    --            departure_state_id / arrival_state_id reference the states table.
+    --            user_id references the users table.
+    --            ticket_number is unique per booking.
+    -- Seed:      None — populated at runtime by the application booking flow.
+    -- Run order: 4th — depends on: 001_create_states.sql, 003_create_users.sql
+    -- =============================================================================
+
+    CREATE TABLE IF NOT EXISTS tickets (
+        id                 SERIAL         PRIMARY KEY,
+        ticket_number      VARCHAR(50)    NOT NULL UNIQUE,                 -- unique booking reference
+        departure_state_id INT            NOT NULL REFERENCES states(id),  -- FK → states
+        arrival_state_id   INT            NOT NULL REFERENCES states(id),  -- FK → states
+        departure_time     TIMESTAMPTZ    NOT NULL,                        -- timezone-aware
+        arrival_time       TIMESTAMPTZ    NOT NULL,                        -- timezone-aware
+        ticket_price       DECIMAL(10, 2) NOT NULL,
+        user_id            INT            NOT NULL REFERENCES users(id),   -- FK → users
+        CHECK (arrival_time > departure_time),                             -- arrival must be after departure
+        CHECK (ticket_price > 0)
+    );
+
+    -- Indexes for common query patterns (look up tickets by user or route)
+    CREATE INDEX IF NOT EXISTS idx_tickets_user_id         ON tickets(user_id);
+    CREATE INDEX IF NOT EXISTS idx_tickets_departure_state ON tickets(departure_state_id);
+    CREATE INDEX IF NOT EXISTS idx_tickets_arrival_state   ON tickets(arrival_state_id);
