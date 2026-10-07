@@ -1,7 +1,7 @@
-<h1 align="center">✈️ FlightOps</h1>
+<h1 align="center">FlightOps</h1>
 
 <p align="center">
-  <strong>A cloud-native flight booking platform built with production-grade infrastructure engineering practices.</strong>
+  A flight booking platform running on Google Kubernetes Engine with GitOps and progressive delivery.
 </p>
 
 <p align="center">
@@ -17,27 +17,24 @@
 </p>
 
 <p align="center">
-  <a href="#"><img src="https://img.shields.io/github/license/ChetanThapliyal/FlightOps?style=flat-square&color=blue" alt="License" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License" /></a>
   <a href="#"><img src="https://img.shields.io/badge/IaC-Terraform-blueviolet?style=flat-square" alt="IaC" /></a>
   <a href="#"><img src="https://img.shields.io/badge/k8s-GKE_Standard-blue?style=flat-square&logo=kubernetes&logoColor=white" alt="Kubernetes" /></a>
 </p>
 
----
-
 ## Overview
 
-FlightOps is a Python web application with a PostgreSQL database, deployed on **GKE Standard** with a full **GitOps** pipeline. 
+FlightOps is a flight booking web application built with Python (Flask) and PostgreSQL, configured for deployment on Google Kubernetes Engine (GKE).
 
-The project covers the **entire lifecycle**: application code → Docker → Terraform (GKE) → Kubernetes manifests → ArgoCD (GitOps) → GitHub Actions CI/CD → Prometheus observability → OPA Gatekeeper policy enforcement → Argo Rollouts progressive delivery.
+The application allows users to register accounts, search flights between US states, view availability, book tickets, and manage existing reservations. The repository covers the full delivery workflow: containerizing the service, managing infrastructure with Terraform, defining Kubernetes manifests, and managing deployments with ArgoCD.
 
-The Flask backend serves a flight booking workflow where users can search flights across US states, view availability, create bookings, and manage their tickets. PostgreSQL runs as an in-cluster StatefulSet, the app is exposed via the **Kubernetes Gateway API** with Google-managed TLS certificates, and secrets are managed through **GCP Secret Manager** with Workload Identity.
-
----
+> **Project status**: The core Flask application, database migrations, local Docker Compose setup, and PostgreSQL Kubernetes manifests are implemented. Cluster infrastructure (Terraform), GitOps configuration (ArgoCD), and monitoring integrations are actively being developed.
 
 ## Architecture
 
-```mermaid
+The target architecture uses Google Cloud Platform services alongside Kubernetes-native tooling:
 
+```mermaid
 graph TB
     subgraph CI_CD ["CI/CD Pipeline"]
         GHA["GitHub Actions"]
@@ -113,41 +110,35 @@ graph TB
     style PROM fill:#161b22,stroke:#E6522C,color:#58a6ff
     style OPA fill:#161b22,stroke:#E6522C,color:#58a6ff
     style SM fill:#161b22,stroke:#E6522C,color:#58a6ff
-
 ```
-
----
 
 ## Tech Stack
 
-| Layer | Technology |
+| Component | Technology |
 |---|---|
-| **Application** | Python, Flask |
-| **Database** | PostgreSQL (in-cluster StatefulSet) |
-| **DB Admin** | `psql` CLI |
-| **Networking** | Kubernetes Gateway API (GKE Gateway Controller) |
-| **TLS** | Google Certificate Manager (managed certs) |
-| **Containerization** | Docker |
-| **Orchestration** | GKE Standard (Kubernetes) |
-| **GitOps** | ArgoCD (App of Apps) |
-| **Package Management** | Helm |
-| **Progressive Delivery** | Argo Rollouts (canary) |
-| **Infrastructure as Code** | Terraform (modular) |
-| **Cloud Provider** | Google Cloud Platform (GKE) |
-| **CI/CD** | GitHub Actions + Workload Identity Federation |
-| **Secrets** | GCP Secret Manager + CSI Driver |
-| **Observability** | Prometheus + Grafana |
-| **Policy** | OPA Gatekeeper |
-| **Logging** | GCP Cloud Logging |
-
----
+| Application framework | Python, Flask, Gunicorn |
+| Database | PostgreSQL 16 (in-cluster StatefulSet) |
+| Database administration | `psql` command-line client |
+| Container runtime | Docker (multi-stage build) |
+| Kubernetes platform | GKE Standard |
+| Traffic routing | Kubernetes Gateway API (GKE Gateway Controller) |
+| TLS certificates | Google Certificate Manager |
+| Continuous delivery | ArgoCD (App of Apps pattern) |
+| Package management | Helm |
+| Deployment strategy | Argo Rollouts (canary deployments) |
+| Infrastructure as code | Terraform |
+| Cloud provider | Google Cloud Platform |
+| CI pipeline | GitHub Actions with Workload Identity Federation |
+| Secret storage | GCP Secret Manager with CSI Driver |
+| Metrics and monitoring | Prometheus, Grafana |
+| Policy validation | OPA Gatekeeper |
+| Logging | GCP Cloud Logging |
 
 ## Database Schema
 
-The PostgreSQL database contains four tables that model the flight booking domain:
+The database consists of four tables supporting the flight booking workflow:
 
 ```mermaid
-
 erDiagram
     STATES {
         int id PK
@@ -187,102 +178,40 @@ erDiagram
     STATES ||--o{ TICKETS : "departure_state_id"
     STATES ||--o{ TICKETS : "arrival_state_id"
     USERS ||--o{ TICKETS : "user_id"
-
 ```
 
----
+## Platform Architecture
 
-## Key Features
-
-- **End-to-end IaC**: Every piece of infrastructure (VPC, GKE cluster, IAM, DNS, Secret Manager) is provisioned via modular Terraform. Zero manual console steps.
-- **GKE Standard on GCP**: Managed Kubernetes with Workload Identity, Gateway API, and auto-scaling node pools.
-- **GitOps with ArgoCD**: App of Apps pattern, Git is the single source of truth. ArgoCD auto-syncs and self-heals.
-- **Gateway API + managed TLS**: Kubernetes Gateway API with GKE-native Gateway Controller and Google-managed certificates.
-- **GCP Secret Manager**: Secrets injected via CSI Driver with Workload Identity — never stored in etcd or Git.
-- **Full observability**: Prometheus + Grafana dashboards for cluster, app, and database metrics.
-- **Policy enforcement**: OPA Gatekeeper enforces security policies (no privileged containers, required labels, trusted image repos).
-- **Progressive delivery**: Argo Rollouts with canary deployments — gradual traffic shifting with automated rollback.
-- **In-cluster PostgreSQL**: Database runs as a Kubernetes StatefulSet with persistent volumes; administration via `psql` CLI.
-- **Flight booking workflow**: Search flights across US states, view availability, book tickets, and manage user accounts.
-
----
-
-## Implementation Workflow
-
-```mermaid
-flowchart LR
-    A["1. Write App Code<br/>(Python + Flask)"] --> B["2. Build & Push<br/>(Docker)"]
-    B --> C["3. Deploy to K8s<br/>(kubectl + Helm)"]
-    C --> D["4. Provision GCP Infra<br/>(Terraform)"]
-    D --> E["5. Automate IaC<br/>(Terraform Modules)"]
-    E --> F["6. CI/CD Pipeline<br/>(GitHub Actions)"]
-
-    style A fill:#1a1a2e,stroke:#3776AB,color:#58a6ff
-    style B fill:#1a1a2e,stroke:#2496ED,color:#58a6ff
-    style C fill:#1a1a2e,stroke:#326CE5,color:#58a6ff
-    style D fill:#1a1a2e,stroke:#4285F4,color:#58a6ff
-    style E fill:#1a1a2e,stroke:#7B42BC,color:#58a6ff
-    style F fill:#1a1a2e,stroke:#2088FF,color:#58a6ff
-```
-
-| Step | Description |
-|---|---|
-| **1. Application Code** | Write the Flask app with Blueprints, SQLAlchemy models, health endpoints |
-| **2. Containerize** | Multi-stage Docker build, push to GCP Artifact Registry |
-| **3. GCP Infrastructure** | Provision VPC, GKE cluster, IAM, DNS, and Secret Manager via Terraform modules |
-| **4. Kubernetes Manifests** | Flask Deployment, PostgreSQL StatefulSet, Gateway API + HTTPRoute |
-| **5. GitOps with ArgoCD** | App of Apps pattern; ArgoCD auto-syncs cluster state from Git |
-| **6. CI/CD Pipeline** | GitHub Actions builds and pushes images; updates image tag in `gitops/`; ArgoCD deploys |
-
----
+- GKE Standard cluster provisioned with Terraform, featuring autoscaling node pools and Workload Identity.
+- GitOps deployment workflow through ArgoCD using the App of Apps pattern.
+- Kubernetes Gateway API paired with Google Cloud Application Load Balancer and managed TLS certificates.
+- GCP Secret Manager integration via the CSI driver, keeping credentials out of Git and etcd.
+- In-cluster PostgreSQL deployed as a StatefulSet with persistent storage and administered using the `psql` command-line client.
+- Progressive delivery with Argo Rollouts for canary deployments and automated rollback.
+- Cluster observability via Prometheus and Grafana dashboards, with policy enforcement handled by OPA Gatekeeper.
 
 ## Project Structure
 
 ```
 FlightOps/
-├── src/flightops/              # Flask application source
-│   ├── routes/                 # Route handlers / Blueprints
-│   ├── models/                 # SQLAlchemy models
-│   ├── templates/              # Jinja2 templates
-│   ├── static/                 # CSS, JS, images
-│   └── tests/                  # Unit & integration tests
-├── infra/                      # Terraform IaC
-│   ├── modules/
-│   │   ├── vpc/                # VPC, subnets, Cloud NAT
-│   │   ├── gke/                # GKE Standard cluster + node pools
-│   │   ├── iam/                # Service accounts, Workload Identity
-│   │   ├── artifact-registry/  # Container image repository
-│   │   ├── dns/                # Cloud DNS zone + records
-│   │   └── secret-manager/     # GCP Secret Manager secrets
-│   └── environments/
-│       ├── dev/
-│       └── prod/
-├── k8s/                        # Kubernetes manifests
-│   ├── gateway/                # Gateway API + HTTPRoute + TLS
-│   ├── app/                    # Flask Deployment + Service
-│   └── db/                     # PostgreSQL StatefulSet + Service
-├── gitops/                     # ArgoCD GitOps
-│   ├── bootstrap/              # Root App of Apps
-│   ├── apps/                   # ArgoCD Application manifests
-│   └── charts/flightops/       # Helm chart
-│       ├── templates/
-│       ├── values.yaml
-│       ├── values-dev.yaml
-│       ├── values-prod.yaml
-│       └── Chart.yaml
-├── .github/
-│   └── workflows/
-│       ├── ci.yaml             # Lint · Test · Build · Scan
-│       └── cd.yaml             # Build · Push · Update GitOps
-├── docs/
-│   ├── assets/                 # Images, diagrams
-│   └── adr/                    # Architecture Decision Records
-├── compose.yml                 # Local dev (PostgreSQL)
-├── Dockerfile
-└── README.md
+├── main.py                     # Flask application entry point
+├── Dockerfile                  # Multi-stage production container build
+├── compose.postgres.yml        # Local PostgreSQL development container
+├── requirements.txt            # Python dependencies
+├── pyproject.toml              # Project metadata and tool configuration
+├── db/
+│   └── migrations/             # SQL schema migrations (001-004)
+├── templates/                  # Jinja2 HTML templates
+├── static/                     # CSS stylesheets and client assets
+├── k8s/
+│   ├── postgres/               # PostgreSQL StatefulSet, ConfigMap, PDB, Service, Job
+│   └── flask/                  # Flask application manifests (in progress)
+├── infra/                      # Terraform modules and environments (planned)
+├── gitops/                     # ArgoCD manifests and Helm charts (planned)
+└── docs/
+    ├── adr/                    # Architecture Decision Records
+    └── implementation_plan.md  # 10-day sprint implementation plan
 ```
-
----
 
 ## Getting Started
 
@@ -290,105 +219,100 @@ FlightOps/
 
 | Tool | Version |
 |---|---|
-| GCP account | Billing enabled |
-| `gcloud` CLI | Authenticated |
-| `terraform` | >= 1.x |
-| `kubectl` | Latest stable |
-| `helm` | >= 3.x |
-| `argocd` CLI | Latest stable |
+| Python | >= 3.12 |
 | Docker | Latest stable |
+| `kubectl` | Latest stable |
+| `terraform` | >= 1.x (for cluster deployment) |
+| `gcloud` CLI | Authenticated with GCP account (for cluster deployment) |
 
 ### Local Development
 
-Spin up PostgreSQL locally with Docker Compose for application development:
+1. Copy the sample environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Start PostgreSQL in Docker:
+   ```bash
+   docker compose -f compose.postgres.yml up -d
+   ```
+
+3. Run the schema migrations:
+   ```bash
+   for f in db/migrations/*.sql; do
+     PGPASSWORD=flightops psql -h localhost -U flightops -d flightops -f "$f"
+   done
+   ```
+
+4. Install dependencies and start the Flask development server:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   python main.py
+   ```
+
+5. Open [http://localhost:5000](http://localhost:5000) to view the application.
+
+### Kubernetes Deployment (PostgreSQL)
+
+Apply the PostgreSQL manifests to a running Kubernetes cluster:
 
 ```bash
-cp .env.example .env          # fill in POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB
-docker compose up -d          # starts postgres:16 on :5432
+kubectl apply -f k8s/postgres/configmap.yaml
+kubectl apply -f k8s/postgres/service.yaml
+kubectl apply -f k8s/postgres/statefulset.yaml
+kubectl apply -f k8s/postgres/podDisruptionBudget.yaml
+kubectl apply -f k8s/postgres/migrationJob.yaml
 ```
 
-Connect with `psql`:
+Check the pod status:
 
 ```bash
-psql -h localhost -U flightops -d flightops
+kubectl get pods -l app=postgres
 ```
 
-### 1. Provision Infrastructure
+## CI/CD Workflow (Planned)
 
-```bash
+GitHub Actions will drive two automated pipelines:
 
-cd infra/environments/dev
-terraform init
-terraform plan
-terraform apply
-```
+- Pull request pipeline (`ci.yaml`): Runs linting, tests, container builds, Trivy security scans, and Helm chart validation.
+- Deployment pipeline (`cd.yaml`): Builds and publishes images to GCP Artifact Registry, updates image tags in the GitOps repository, and lets ArgoCD synchronize the cluster state.
 
-### 2. Connect to the Cluster
-
-```bash
-gcloud container clusters get-credentials flightops-cluster --region us-central1
-kubectl cluster-info
-```
-
-### 3. Bootstrap ArgoCD
-
-```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-kubectl apply -f gitops/bootstrap/root-app.yaml
-```
-
-### 4. Verify
-
-```bash
-kubectl get pods -n flightops
-# Open https://flightops.chetan-thapliyal.cloud
-```
-
----
-
-## CI/CD Pipeline
-
-GitHub Actions drives two workflows:
-
-| Workflow | Trigger | Steps |
-|---|---|---|
-| **`ci.yaml`** | Every PR | Lint → Test → Build → Trivy scan → Helm lint |
-| **`cd.yaml`** | Merge to `main` | Build & push to Artifact Registry → Update image tag in gitops/ → ArgoCD auto-deploys |
-
-CI/CD uses **Workload Identity Federation** — no service account keys. ArgoCD handles the actual deployment via GitOps (CI never touches `kubectl` or `helm install` directly).
-
----
+Authentication to GCP will use Workload Identity Federation instead of long-lived service account keys.
 
 ## Architecture Decisions
 
-Key infrastructure and design decisions are documented as ADRs in [`/docs/adr`](./docs/adr):
+Technical decisions and trade-offs are documented as Architecture Decision Records in [`docs/adr`](./docs/adr):
 
-| ADR | Decision |
-|---|---|
-| [ADR-0000](./docs/adr/0000-use-adr.md) | Use Architecture Decision Records |
-| [ADR-0001](./docs/adr/0001-gke-standard-over-self-managed-kubernetes.md) | GKE Standard over self-managed Kubernetes and GKE Autopilot |
-| [ADR-0002](./docs/adr/0002-in-cluster-postgresql-over-cloud-sql.md) | In-cluster PostgreSQL StatefulSet over Cloud SQL |
-| [ADR-0003](./docs/adr/0003-gateway-api-over-nginx-ingress.md) | GKE Gateway API over Nginx Ingress (EOL March 2026) |
-| [ADR-0004](./docs/adr/0004-helm-for-cluster-and-app-management.md) | Helm for cluster and application packaging |
-| [ADR-0005](./docs/adr/0005-terraform-modular-gcp-infrastructure.md) | Terraform modular design with GCS remote state |
-| [ADR-0006](./docs/adr/0006-psql-cli-over-pgadmin.md) | `psql` CLI over pgAdmin for database administration |
-| [ADR-0007](./docs/adr/0007-argocd-gitops-with-monorepo.md) | ArgoCD GitOps with App of Apps in a monorepo |
-| [ADR-0008](./docs/adr/0008-gcp-secret-manager-over-k8s-secrets.md) | GCP Secret Manager over Kubernetes Secrets |
-| [ADR-0009](./docs/adr/0009-argo-rollouts-for-progressive-delivery.md) | Argo Rollouts for canary progressive delivery |
+| Record | Topic | Status |
+|---|---|---|
+| [ADR-0000](./docs/adr/0000-use-adr.md) | Record Architecture Decisions | Accepted |
+| [ADR-0001](./docs/adr/0001-psql-cli-over-pgadmin.md) | PostgreSQL Developer Tooling and Persistence Strategy (`psql` CLI over pgAdmin) | Accepted |
+| ADR-0002 | GKE Standard over self-managed Kubernetes and GKE Autopilot | Planned |
+| ADR-0003 | In-cluster PostgreSQL StatefulSet over Cloud SQL | Planned |
+| ADR-0004 | GKE Gateway API over Ingress-NGINX | Planned |
+| ADR-0005 | Helm for cluster and application packaging | Planned |
+| ADR-0006 | Terraform modular structure with remote state | Planned |
+| ADR-0007 | ArgoCD GitOps repository structure | Planned |
+| ADR-0008 | GCP Secret Manager via CSI Driver over Kubernetes Secrets | Planned |
+| ADR-0009 | Argo Rollouts canary deployments for progressive delivery | Planned |
 
----
+## Implementation Roadmap
 
-## Roadmap
+The project is tracked against a 10-day implementation sprint detailed in [`docs/implementation_plan.md`](./docs/implementation_plan.md):
 
-- [ ] Load testing with k6
-- [ ] Multi-environment promotion pipeline (dev → staging → prod)
-- [ ] Service mesh integration (Istio)
-- [ ] Velero for backup and disaster recovery
-- [ ] Microservices decomposition (booking service, user service)
-- [ ] Message broker (Pub/Sub) + KEDA for event-driven autoscaling
-
----
+- [x] Day 1: Application code, database schema migrations, and Docker containerization
+- [x] Day 2: Architecture Decision Records framework and local Docker Compose setup
+- [x] Day 3: PostgreSQL Kubernetes manifests (StatefulSet, ConfigMap, Service, PDB, Migration Job)
+- [ ] Day 3 (cont.): Flask Kubernetes deployment and service manifests
+- [ ] Day 4: Terraform modules for GKE Standard, VPC, and Cloud NAT
+- [ ] Day 5: Gateway API setup, HTTPRoute definitions, and Google-managed TLS certificates
+- [ ] Day 6: ArgoCD bootstrap and Helm chart packaging
+- [ ] Day 7: GitHub Actions CI/CD workflows with Workload Identity Federation
+- [ ] Day 8: GCP Secret Manager integration with Secret Store CSI Driver
+- [ ] Day 9: Cluster observability with Prometheus, Grafana, and Cloud Logging
+- [ ] Day 10: OPA Gatekeeper policy enforcement and Argo Rollouts canary deployment
 
 ## Author
 
@@ -400,8 +324,6 @@ Key infrastructure and design decisions are documented as ADRs in [`/docs/adr`](
   <a href="https://www.linkedin.com/in/chetanthapliyal/"><img src="https://img.shields.io/badge/LinkedIn-chetanthapliyal-0a66c2?style=flat-square&logo=linkedin&logoColor=white" alt="LinkedIn" /></a>
   <a href="https://github.com/ChetanThapliyal"><img src="https://img.shields.io/badge/GitHub-ChetanThapliyal-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub" /></a>
 </p>
-
----
 
 ## License
 
