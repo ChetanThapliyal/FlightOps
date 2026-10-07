@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="docs/assets/flightops-banner.png" alt="FlightOps Banner" width="100%" />
-</p>
-
 <h1 align="center">✈️ FlightOps</h1>
 
 <p align="center">
