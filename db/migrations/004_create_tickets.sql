@@ -10,7 +10,7 @@
 -- NOTE:      Run 003_create_users.sql before this file (users FK must exist).
 -- =============================================================================
 
-CREATE TABLE tickets (
+CREATE TABLE IF NOT EXISTS tickets (
     id                 SERIAL         PRIMARY KEY,
     ticket_number      VARCHAR(50)    NOT NULL UNIQUE,                 -- unique booking reference
     departure_state_id INT            NOT NULL REFERENCES states(id),  -- FK → states
@@ -24,6 +24,6 @@ CREATE TABLE tickets (
 );
 
 -- Indexes for common query patterns (look up tickets by user or route)
-CREATE INDEX idx_tickets_user_id         ON tickets(user_id);
-CREATE INDEX idx_tickets_departure_state ON tickets(departure_state_id);
-CREATE INDEX idx_tickets_arrival_state   ON tickets(arrival_state_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_user_id         ON tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_departure_state ON tickets(departure_state_id);
+CREATE INDEX IF NOT EXISTS idx_tickets_arrival_state   ON tickets(arrival_state_id);
